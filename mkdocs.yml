@@ -1,0 +1,119 @@
+# MkDocs Configuration for Mathematics for AI
+
+site_name: Mathematics for AI
+site_description: Educational library for AI mathematics
+site_author: Your Name
+site_url: https://yourusername.github.io/mathematics-for-ai
+
+repo_name: mathematics-for-ai
+repo_url: https://github.com/yourusername/mathematics-for-ai
+
+theme:
+  name: material
+  palette:
+    primary: indigo
+    accent: indigo
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+  icon:
+    repo: fontawesome/brands/github
+
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - API Reference:
+      - Math Utils:
+          - Linear Algebra: api/linear_algebra.md
+          - Calculus: api/calculus.md
+          - Probability: api/probability.md
+          - Statistics: api/statistics.md
+      - AI Models:
+          - Linear Models: api/linear_models.md
+          - Neural Networks: api/neural_networks.md
+          - Clustering: api/clustering.md
+          - SVM: api/svm.md
+      - Visualization:
+          - 2D Plots: api/plots_2d.md
+          - 3D Plots: api/plots_3d.md
+          - Animations: api/animations.md
+  - Tutorials:
+      - Introduction: tutorials/01_introduction.md
+      - Linear Algebra: tutorials/02_linear_algebra.md
+      - Calculus: tutorials/03_calculus.md
+      - Probability: tutorials/04_probability.md
+      - Machine Learning: tutorials/05_machine_learning.md
+  - Theory:
+      - Linear Algebra: theory/linear_algebra.md
+      - Calculus: theory/calculus.md
+      - Probability: theory/probability.md
+      - Statistics: theory/statistics.md
+  - Contributing: CONTRIBUTING.md
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_source: true
+            show_root_heading: true
+            show_category_heading: true
+            merge_init_into_class: true
+  - git-revision-date-localized
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - meta
+  - toc:
+      permalink: true
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.magiclink:
+      repo_url_shorthand: true
+      user: yourusername
+      repo: mathematics-for-ai
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/yourusername/mathematics-for-ai
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/mathematics-for-ai/
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+
+copyright: Copyright &copy; 2024 Your Name

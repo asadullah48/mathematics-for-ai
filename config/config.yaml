@@ -1,0 +1,52 @@
+# Configuration for Mathematics for AI
+
+# Random seed for reproducibility
+random_seed: 42
+
+# Numerical precision
+precision: "float64"
+
+# Default optimization settings
+optimization:
+  default_learning_rate: 0.001
+  max_iterations: 1000
+  tolerance: 1e-6
+  early_stopping: true
+  patience: 50
+
+# Model defaults
+models:
+  linear_regression:
+    fit_intercept: true
+    method: "gradient_descent"
+  
+  logistic_regression:
+    threshold: 0.5
+    regularization: "none"
+  
+  neural_network:
+    weight_init: "he"
+    optimizer: "adam"
+    loss: "cross_entropy"
+  
+  kmeans:
+    init: "kmeans++"
+    n_init: 10
+
+# Visualization defaults
+visualization:
+  figsize: [10, 8]
+  dpi: 300
+  style: "seaborn-v0_8"
+  animation_fps: 30
+
+# Plot settings
+plots:
+  show_grid: true
+  alpha: 0.8
+  marker_size: 50
+
+# Testing settings
+testing:
+  tolerance: 1e-6
+  random_seed: 42

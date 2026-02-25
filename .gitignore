@@ -1,3 +1,5 @@
+# Mathematics for AI - .gitignore
+
 # Python
 __pycache__/
 *.py[cod]
@@ -16,26 +18,12 @@ parts/
 sdist/
 var/
 wheels/
-pip-wheel-metadata/
-share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
 MANIFEST
 
-# Jupyter Notebook
-.ipynb_checkpoints
-*/.ipynb_checkpoints/*
-
-# Data files (large datasets)
-data/large-datasets/
-*.csv
-*.json
-*.pkl
-*.h5
-*.hdf5
-
-# Environment
+# Virtual environments
 .env
 .venv
 env/
@@ -44,18 +32,69 @@ ENV/
 env.bak/
 venv.bak/
 
+# Jupyter Notebook
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+*.sublime-project
+*.sublime-workspace
 
 # OS
 .DS_Store
 Thumbs.db
+Desktop.ini
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+coverage.xml
+*.cover
+
+# Type checking
+.mypy_cache/
+
+# Documentation
+docs/_build/
+site/
+
+# Data files (large datasets)
+data/large-datasets/
+*.pkl
+*.h5
+*.hdf5
+!data/sample-datasets/.gitkeep
+
+# Logs
+*.log
+logs/
 
 # Temporary files
 *.tmp
 *.temp
-*.log
+~*
+
+# Secrets
+.env.local
+.env.*.local
+secrets/
+*.key
+*.pem
+
+# Model checkpoints
+models/checkpoints/
+*.pt
+*.pth
+*.onnx
+
+# Animation outputs
+*.gif
+*.mp4
+!docs/animations/.gitkeep
