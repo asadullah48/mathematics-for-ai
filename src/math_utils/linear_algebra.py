@@ -247,10 +247,11 @@ class LinearAlgebra:
             Q: Orthogonal matrix (m x m)
             R: Upper triangular matrix (m x n)
         """
+        A = np.asarray(A, dtype=float)
         m, n = A.shape
         Q = np.zeros((m, n))
         R = np.zeros((n, n))
-        
+
         for j in range(n):
             v = A[:, j].copy()
             for i in range(j):
@@ -261,7 +262,7 @@ class LinearAlgebra:
                 Q[:, j] = v / R[j, j]
             else:
                 Q[:, j] = v
-        
+
         return Q, R
     
     @staticmethod
@@ -398,12 +399,10 @@ class LinearAlgebra:
         Returns:
             Pseudoinverse matrix
         """
-        U, S, Vt = np.linalg.svd(A)
-        # Invert non-zero singular values
-        S_inv = np.zeros_like(S)
-        mask = S > tol
-        S_inv[mask] = 1.0 / S[mask]
-        return Vt.T @ np.diag(S_inv) @ U.T
+        # full_matrices=False gives economy SVD: U(m×k), S(k,), Vt(k×n) where k=min(m,n)
+        U, S, Vt = np.linalg.svd(A, full_matrices=False)
+        S_inv = np.where(S > tol, 1.0 / S, 0.0)
+        return (Vt.T * S_inv) @ U.T
     
     # ==================== Norms and Distances ====================
     
@@ -489,9 +488,10 @@ class LinearAlgebra:
         Returns:
             Orthonormalized vectors (same shape)
         """
+        vectors = np.asarray(vectors, dtype=float)
         m, n = vectors.shape
         Q = np.zeros((m, n))
-        
+
         for j in range(n):
             v = vectors[:, j].copy()
             for i in range(j):
@@ -499,7 +499,7 @@ class LinearAlgebra:
             norm = np.linalg.norm(v)
             if norm > 1e-10:
                 Q[:, j] = v / norm
-        
+
         return Q
     
     @staticmethod
@@ -641,13 +641,13 @@ class LinearAlgebra:
     def givens_rotation(n: int, i: int, j: int, theta: float) -> np.ndarray:
         """
         Create a Givens rotation matrix.
-        
+
         Args:
             n: Size of the matrix
             i: First index
             j: Second index
             theta: Rotation angle
-            
+
         Returns:
             Givens rotation matrix
         """
@@ -658,3 +658,119 @@ class LinearAlgebra:
         G[i, j] = -s
         G[j, i] = s
         return G
+
+
+class PCA:
+    """
+    Principal Component Analysis (PCA).
+
+    Reduces dimensionality by projecting data onto the directions of maximum variance,
+    computed via SVD of the mean-centred data matrix.
+
+    Parameters:
+        n_components: Number of principal components to keep.
+                      If None, keeps all components.
+        whiten: If True, divide projected data by sqrt of explained variance
+                so each component has unit variance.
+
+    Attributes:
+        components_: (n_components, n_features) — principal directions (rows).
+        explained_variance_: Variance captured by each component.
+        explained_variance_ratio_: Fraction of total variance per component.
+        singular_values_: Singular values corresponding to each component.
+        mean_: Per-feature mean used for centring.
+        n_components_: Actual number of components kept.
+    """
+
+    def __init__(self, n_components: Optional[int] = None, whiten: bool = False):
+        self.n_components = n_components
+        self.whiten = whiten
+        self.components_: Optional[np.ndarray] = None
+        self.explained_variance_: Optional[np.ndarray] = None
+        self.explained_variance_ratio_: Optional[np.ndarray] = None
+        self.singular_values_: Optional[np.ndarray] = None
+        self.mean_: Optional[np.ndarray] = None
+        self.n_components_: Optional[int] = None
+
+    def fit(self, X: np.ndarray) -> 'PCA':
+        """
+        Fit PCA to data X.
+
+        Args:
+            X: Data matrix (n_samples, n_features)
+
+        Returns:
+            Self
+        """
+        X = np.asarray(X, dtype=float)
+        n_samples, n_features = X.shape
+
+        self.mean_ = np.mean(X, axis=0)
+        X_centered = X - self.mean_
+
+        n_comp = min(n_samples, n_features) if self.n_components is None else self.n_components
+        n_comp = min(n_comp, min(n_samples, n_features))
+
+        U, S, Vt = np.linalg.svd(X_centered, full_matrices=False)
+
+        self.components_ = Vt[:n_comp]
+        self.singular_values_ = S[:n_comp]
+        self.explained_variance_ = (S[:n_comp] ** 2) / (n_samples - 1)
+        total_var = np.sum(S ** 2) / (n_samples - 1)
+        self.explained_variance_ratio_ = self.explained_variance_ / total_var
+        self.n_components_ = n_comp
+        return self
+
+    def transform(self, X: np.ndarray) -> np.ndarray:
+        """
+        Project X into the principal-component space.
+
+        Args:
+            X: Data matrix (n_samples, n_features)
+
+        Returns:
+            Reduced data (n_samples, n_components)
+        """
+        X = np.asarray(X, dtype=float)
+        X_centered = X - self.mean_
+        X_proj = X_centered @ self.components_.T
+        if self.whiten:
+            X_proj /= np.sqrt(self.explained_variance_)
+        return X_proj
+
+    def fit_transform(self, X: np.ndarray) -> np.ndarray:
+        """Fit to X, then transform X."""
+        return self.fit(X).transform(X)
+
+    def inverse_transform(self, X_reduced: np.ndarray) -> np.ndarray:
+        """
+        Map reduced data back to original feature space (approximate).
+
+        Args:
+            X_reduced: Projected data (n_samples, n_components)
+
+        Returns:
+            Reconstructed data (n_samples, n_features)
+        """
+        if self.whiten:
+            X_reduced = X_reduced * np.sqrt(self.explained_variance_)
+        return X_reduced @ self.components_ + self.mean_
+
+    def reconstruction_error(self, X: np.ndarray) -> float:
+        """
+        Compute the mean squared reconstruction error per sample.
+
+        Args:
+            X: Original data (n_samples, n_features)
+
+        Returns:
+            Mean squared reconstruction error
+        """
+        X_reduced = self.transform(X)
+        X_reconstructed = self.inverse_transform(X_reduced)
+        return np.mean(np.sum((X - X_reconstructed) ** 2, axis=1))
+
+    @property
+    def cumulative_explained_variance_ratio(self) -> np.ndarray:
+        """Cumulative sum of explained variance ratios."""
+        return np.cumsum(self.explained_variance_ratio_)

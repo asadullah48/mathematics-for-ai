@@ -930,8 +930,288 @@ class NeuralNetwork:
         """Load model weights."""
         with open(filepath, 'r') as f:
             data = json.load(f)
-        
+
         for i, layer_data in enumerate(data['weights']):
             self.layers[i].weights = np.array(layer_data['weights'])
             if layer_data['bias'] is not None:
                 self.layers[i].bias = np.array(layer_data['bias'])
+
+
+# ==================== LSTM ====================
+
+class LSTM:
+    """
+    Long Short-Term Memory (LSTM) layer.
+
+    Solves the vanishing-gradient problem of vanilla RNNs via gated cell state::
+
+        i = σ(W · [h_{t-1}, x_t] + b)[:H]    # input gate
+        f = σ(W · [h_{t-1}, x_t] + b)[H:2H]  # forget gate
+        o = σ(W · [h_{t-1}, x_t] + b)[2H:3H] # output gate
+        g = tanh(W · [h_{t-1}, x_t] + b)[3H:] # cell gate
+        c_t = f ⊙ c_{t-1} + i ⊙ g
+        h_t = o ⊙ tanh(c_t)
+
+    Parameters:
+        input_size: Dimensionality of input features
+        hidden_size: Dimensionality of hidden/cell state
+    """
+
+    def __init__(self, input_size: int, hidden_size: int):
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+
+        scale = np.sqrt(2.0 / (input_size + hidden_size))
+        combined = input_size + hidden_size
+        self.W = np.random.randn(combined, hidden_size * 4) * scale
+        self.b = np.zeros((1, hidden_size * 4))
+
+        self._cache: List = []
+
+    @staticmethod
+    def _sigmoid(x: np.ndarray) -> np.ndarray:
+        return 1.0 / (1.0 + np.exp(-np.clip(x, -500, 500)))
+
+    def forward(self, X: np.ndarray,
+                h0: Optional[np.ndarray] = None,
+                c0: Optional[np.ndarray] = None) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """
+        Forward pass through all time steps.
+
+        Args:
+            X: Input sequence (batch, seq_len, input_size)
+            h0: Initial hidden state (batch, hidden_size). Defaults to zeros.
+            c0: Initial cell state (batch, hidden_size). Defaults to zeros.
+
+        Returns:
+            Tuple of (outputs, h_final, c_final)
+            outputs shape: (batch, seq_len, hidden_size)
+        """
+        batch_size, seq_len, _ = X.shape
+        h = h0 if h0 is not None else np.zeros((batch_size, self.hidden_size))
+        c = c0 if c0 is not None else np.zeros((batch_size, self.hidden_size))
+
+        self._cache = []
+        outputs = []
+        H = self.hidden_size
+
+        for t in range(seq_len):
+            x_t = X[:, t, :]
+            combined = np.concatenate([x_t, h], axis=1)
+            gates = combined @ self.W + self.b
+
+            i_gate = self._sigmoid(gates[:, :H])
+            f_gate = self._sigmoid(gates[:, H:2 * H])
+            o_gate = self._sigmoid(gates[:, 2 * H:3 * H])
+            g_gate = np.tanh(gates[:, 3 * H:])
+
+            c = f_gate * c + i_gate * g_gate
+            h = o_gate * np.tanh(c)
+
+            self._cache.append((x_t, combined, i_gate, f_gate, o_gate, g_gate, c.copy(), h.copy()))
+            outputs.append(h)
+
+        return np.stack(outputs, axis=1), h, c
+
+    def step(self, x_t: np.ndarray,
+             h: np.ndarray, c: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Single-step forward pass (useful for autoregressive decoding).
+
+        Args:
+            x_t: Input at time t (batch, input_size)
+            h: Previous hidden state (batch, hidden_size)
+            c: Previous cell state (batch, hidden_size)
+
+        Returns:
+            Tuple of (h_new, c_new)
+        """
+        H = self.hidden_size
+        combined = np.concatenate([x_t, h], axis=1)
+        gates = combined @ self.W + self.b
+        i_gate = self._sigmoid(gates[:, :H])
+        f_gate = self._sigmoid(gates[:, H:2 * H])
+        o_gate = self._sigmoid(gates[:, 2 * H:3 * H])
+        g_gate = np.tanh(gates[:, 3 * H:])
+        c_new = f_gate * c + i_gate * g_gate
+        h_new = o_gate * np.tanh(c_new)
+        return h_new, c_new
+
+
+# ==================== Attention Mechanisms ====================
+
+class ScaledDotProductAttention:
+    """
+    Scaled dot-product attention (Vaswani et al., 2017).
+
+        Attention(Q, K, V) = softmax(QK^T / sqrt(d_k)) * V
+
+    Dividing by sqrt(d_k) prevents softmax saturation when d_k is large,
+    which would otherwise produce near-zero gradients.
+    """
+
+    @staticmethod
+    def forward(Q: np.ndarray, K: np.ndarray, V: np.ndarray,
+                mask: Optional[np.ndarray] = None) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Compute attention output and weights.
+
+        Args:
+            Q: Queries  (batch, seq_q, d_k)
+            K: Keys     (batch, seq_k, d_k)
+            V: Values   (batch, seq_k, d_v)
+            mask: Optional mask (batch, seq_q, seq_k).
+                  Zero entries are set to -1e9 before softmax.
+
+        Returns:
+            Tuple of (output, attention_weights)
+            output: (batch, seq_q, d_v)
+            attention_weights: (batch, seq_q, seq_k)
+        """
+        d_k = Q.shape[-1]
+        scores = Q @ K.transpose(0, 2, 1) / np.sqrt(d_k)
+
+        if mask is not None:
+            scores = np.where(mask == 0, -1e9, scores)
+
+        scores -= np.max(scores, axis=-1, keepdims=True)  # numerical stability
+        exp_scores = np.exp(scores)
+        attention_weights = exp_scores / (np.sum(exp_scores, axis=-1, keepdims=True) + 1e-15)
+
+        return attention_weights @ V, attention_weights
+
+
+class MultiHeadAttention:
+    """
+    Multi-head attention (Vaswani et al., 2017).
+
+    Runs num_heads parallel attention heads on d_k = d_model // num_heads
+    dimensional projections, then concatenates and projects back.  This allows
+    the model to attend to information from different representation sub-spaces.
+
+    Parameters:
+        d_model: Total model dimension (must be divisible by num_heads)
+        num_heads: Number of parallel attention heads
+    """
+
+    def __init__(self, d_model: int, num_heads: int):
+        if d_model % num_heads != 0:
+            raise ValueError(
+                f"d_model ({d_model}) must be divisible by num_heads ({num_heads})"
+            )
+        self.d_model = d_model
+        self.num_heads = num_heads
+        self.d_k = d_model // num_heads
+
+        scale = np.sqrt(1.0 / d_model)
+        self.W_Q = np.random.randn(d_model, d_model) * scale
+        self.W_K = np.random.randn(d_model, d_model) * scale
+        self.W_V = np.random.randn(d_model, d_model) * scale
+        self.W_O = np.random.randn(d_model, d_model) * scale
+
+        self.attention_weights: Optional[np.ndarray] = None
+
+    def _split_heads(self, X: np.ndarray) -> np.ndarray:
+        """(batch, seq, d_model) → (batch, heads, seq, d_k)."""
+        batch, seq, _ = X.shape
+        return X.reshape(batch, seq, self.num_heads, self.d_k).transpose(0, 2, 1, 3)
+
+    def _merge_heads(self, X: np.ndarray) -> np.ndarray:
+        """(batch, heads, seq, d_k) → (batch, seq, d_model)."""
+        batch, _, seq, _ = X.shape
+        return X.transpose(0, 2, 1, 3).reshape(batch, seq, self.d_model)
+
+    def forward(self, Q: np.ndarray, K: np.ndarray, V: np.ndarray,
+                mask: Optional[np.ndarray] = None) -> np.ndarray:
+        """
+        Compute multi-head attention.
+
+        Args:
+            Q: Queries (batch, seq_q, d_model)
+            K: Keys    (batch, seq_k, d_model)
+            V: Values  (batch, seq_k, d_model)
+            mask: Optional mask (batch, seq_q, seq_k)
+
+        Returns:
+            Output (batch, seq_q, d_model)
+        """
+        Q_proj, K_proj, V_proj = Q @ self.W_Q, K @ self.W_K, V @ self.W_V
+
+        Q_h = self._split_heads(Q_proj)  # (batch, heads, seq, d_k)
+        K_h = self._split_heads(K_proj)
+        V_h = self._split_heads(V_proj)
+
+        batch, heads, seq_q, d_k = Q_h.shape
+        seq_k = K_h.shape[2]
+
+        Q_flat = Q_h.reshape(batch * heads, seq_q, d_k)
+        K_flat = K_h.reshape(batch * heads, seq_k, d_k)
+        V_flat = V_h.reshape(batch * heads, seq_k, d_k)
+
+        if mask is not None:
+            mask_flat = np.tile(mask[:, np.newaxis], (1, heads, 1, 1)).reshape(
+                batch * heads, seq_q, seq_k)
+        else:
+            mask_flat = None
+
+        head_out, weights_flat = ScaledDotProductAttention.forward(
+            Q_flat, K_flat, V_flat, mask_flat)
+
+        self.attention_weights = weights_flat.reshape(batch, heads, seq_q, seq_k)
+        head_out = head_out.reshape(batch, heads, seq_q, d_k)
+        return self._merge_heads(head_out) @ self.W_O
+
+
+class TransformerBlock:
+    """
+    Single Transformer encoder block (Vaswani et al., 2017).
+
+    Architecture (Pre-LN variant)::
+
+        x → MultiHeadSelfAttention(x) + x → LayerNorm → out1
+        out1 → FeedForward(out1) + out1 → LayerNorm → out2
+
+    Residual connections ensure gradient flow across many stacked layers.
+    Layer normalisation (over features, not batch) stabilises training.
+
+    Parameters:
+        d_model: Model dimension
+        num_heads: Number of attention heads
+        d_ff: Inner dimension of feed-forward sub-layer (default: 4 * d_model)
+    """
+
+    def __init__(self, d_model: int, num_heads: int, d_ff: Optional[int] = None):
+        self.d_model = d_model
+        self.attention = MultiHeadAttention(d_model, num_heads)
+
+        d_ff = d_ff or 4 * d_model
+        scale = np.sqrt(2.0 / d_model)
+        self.W1 = np.random.randn(d_model, d_ff) * scale
+        self.b1 = np.zeros((1, d_ff))
+        self.W2 = np.random.randn(d_ff, d_model) * scale
+        self.b2 = np.zeros((1, d_model))
+
+    @staticmethod
+    def _layer_norm(X: np.ndarray, eps: float = 1e-6) -> np.ndarray:
+        mean = np.mean(X, axis=-1, keepdims=True)
+        std = np.std(X, axis=-1, keepdims=True)
+        return (X - mean) / (std + eps)
+
+    def forward(self, X: np.ndarray,
+                mask: Optional[np.ndarray] = None) -> np.ndarray:
+        """
+        Forward pass.
+
+        Args:
+            X: Input (batch, seq_len, d_model)
+            mask: Optional self-attention mask (batch, seq_len, seq_len)
+
+        Returns:
+            Output (batch, seq_len, d_model)
+        """
+        attn_out = self.attention.forward(X, X, X, mask)
+        X = self._layer_norm(X + attn_out)
+
+        ff_hidden = np.maximum(0, X @ self.W1 + self.b1)  # ReLU
+        ff_out = ff_hidden @ self.W2 + self.b2
+        return self._layer_norm(X + ff_out)

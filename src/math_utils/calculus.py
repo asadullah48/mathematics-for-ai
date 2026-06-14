@@ -5,6 +5,7 @@ Differential and integral calculus operations for machine learning.
 Includes automatic differentiation, numerical methods, and optimization.
 """
 
+import math
 import numpy as np
 from typing import Callable, List, Tuple, Optional, Union
 from dataclasses import dataclass
@@ -83,14 +84,14 @@ class Calculus:
             for i in range(n):
                 x_plus = x.copy()
                 x_plus[i] += h
-                gradient[i] = (f(x_plus) - f(x)) / h
+                gradient[i] = (np.asarray(f(x_plus)).flat[0] - np.asarray(f(x)).flat[0]) / h
         elif method == "central":
             for i in range(n):
                 x_plus = x.copy()
                 x_minus = x.copy()
                 x_plus[i] += h
                 x_minus[i] -= h
-                gradient[i] = (f(x_plus) - f(x_minus)) / (2 * h)
+                gradient[i] = (np.asarray(f(x_plus)).flat[0] - np.asarray(f(x_minus)).flat[0]) / (2 * h)
         else:
             raise ValueError(f"Unknown method: {method}. Use 'forward' or 'central'")
         
@@ -160,8 +161,9 @@ class Calculus:
                 x_mm[i] -= h
                 x_mm[j] -= h
                 
-                H[i, j] = (f(x_pp) - f(x_pm) - f(x_mp) + f(x_mm)) / (4 * h * h)
-                H[j, i] = H[i, j]  # Symmetry
+                H[i, j] = (np.asarray(f(x_pp)).flat[0] - np.asarray(f(x_pm)).flat[0]
+                           - np.asarray(f(x_mp)).flat[0] + np.asarray(f(x_mm)).flat[0]) / (4 * h * h)
+                H[j, i] = H[i, j]
         
         return H
     
@@ -425,7 +427,7 @@ class Calculus:
                 # Simplified: use automatic differentiation concept
                 coeff = Calculus._compute_derivative_at(f, x0, k)
             
-            coefficients.append(coeff / np.math.factorial(k))
+            coefficients.append(coeff / math.factorial(k))
         
         # Evaluate Taylor polynomial
         taylor = np.zeros_like(x)

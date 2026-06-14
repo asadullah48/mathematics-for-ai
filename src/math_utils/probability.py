@@ -5,6 +5,7 @@ Probability theory implementations for machine learning and statistics.
 Includes distributions, Bayes' theorem, and probabilistic computations.
 """
 
+import math
 import numpy as np
 from typing import Tuple, List, Optional, Union, Callable
 from scipy import stats as scipy_stats
@@ -287,7 +288,7 @@ class Probability:
         Uses error function approximation.
         """
         z = (x - mu) / sigma
-        return 0.5 * (1 + np.erf(z / np.sqrt(2)))
+        return 0.5 * (1 + math.erf(z / np.sqrt(2)))
     
     @staticmethod
     def gaussian_sample(mu: float = 0.0, sigma: float = 1.0, 
@@ -1112,22 +1113,20 @@ class Probability:
         return t_stat, p_value
     
     @staticmethod
-    def chi_squared_test(observed: np.ndarray, 
+    def chi_squared_test(observed: np.ndarray,
                         expected: np.ndarray) -> Tuple[float, float]:
         """
         Chi-squared goodness of fit test.
-        
+
         Args:
             observed: Observed frequencies
             expected: Expected frequencies
-            
+
         Returns:
             Tuple of (chi-squared statistic, p-value)
         """
-        chi2 = np.sum((observed - expected) ** 2 / expected)
+        from scipy.stats import chi2 as chi2_dist
+        chi2_stat = np.sum((observed - expected) ** 2 / expected)
         df = len(observed) - 1
-        
-        from scipy.stats import chi2
-        p_value = 1 - chi2.cdf(chi2, df)
-        
-        return chi2, p_value
+        p_value = 1 - chi2_dist.cdf(chi2_stat, df)
+        return chi2_stat, p_value

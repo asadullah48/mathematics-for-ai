@@ -132,7 +132,6 @@ class LinearRegression(BaseLinearModel):
         
         for i in range(self.n_iterations):
             # Forward pass
-            predictions = X_processed @ self.weights if self.fit_intercept else X_processed @ self.weights + self.bias
             if self.fit_intercept:
                 predictions = X_processed @ self.weights
             else:
@@ -152,20 +151,23 @@ class LinearRegression(BaseLinearModel):
                 db = (2 / n_samples) * np.sum(errors)
                 self.weights -= self.learning_rate * dw
                 self.bias -= self.learning_rate * db
-    
+
+        # Extract bias from joint weight vector so predict() can use X @ w + b
+        if self.fit_intercept:
+            self.bias = self.weights[0]
+            self.weights = self.weights[1:]
+
     def predict(self, X: np.ndarray) -> np.ndarray:
         """
         Make predictions.
-        
+
         Args:
             X: Features (n_samples, n_features)
-            
+
         Returns:
             Predictions (n_samples,)
         """
         X = np.asarray(X)
-        if self.fit_intercept:
-            return X @ self.weights + self.bias
         return X @ self.weights + self.bias
     
     def score(self, X: np.ndarray, y: np.ndarray) -> float:
@@ -244,16 +246,19 @@ class Ridge(BaseLinearModel):
                 db = (2 / n_samples) * np.sum(errors)
                 self.weights -= self.learning_rate * dw
                 self.bias -= self.learning_rate * db
-        
+
+        # Extract bias from joint weight vector so predict() can use X @ w + b
+        if self.fit_intercept:
+            self.bias = self.weights[0]
+            self.weights = self.weights[1:]
+
         return self
-    
+
     def predict(self, X: np.ndarray) -> np.ndarray:
         """Make predictions."""
         X = np.asarray(X)
-        if self.fit_intercept:
-            return X @ self.weights + self.bias
         return X @ self.weights + self.bias
-    
+
     def score(self, X: np.ndarray, y: np.ndarray) -> float:
         """Compute R² score."""
         y_pred = self.predict(X)
@@ -357,9 +362,12 @@ class Lasso(BaseLinearModel):
             if np.max(np.abs(self.weights - weights_old)) < self.tol:
                 break
             
-            # Record cost
-            predictions = self.predict(X)
-            cost = np.mean((predictions - y) ** 2) + self.alpha * np.sum(np.abs(self.weights))
+            # Record cost — use the internal augmented weights directly (bias not yet extracted)
+            if self.fit_intercept:
+                _pred = X @ self.weights[1:] + self.weights[0]
+            else:
+                _pred = X @ self.weights
+            cost = np.mean((_pred - y) ** 2) + self.alpha * np.sum(np.abs(self.weights))
             self.cost_history.append(cost)
         
         if self.fit_intercept:
@@ -478,24 +486,26 @@ class LogisticRegression(BaseLinearModel):
                 
                 self.weights -= self.learning_rate * dw
                 self.bias -= self.learning_rate * db
-        
+
+        # Extract bias from joint weight vector so predict_proba() can use X @ w + b
+        if self.fit_intercept:
+            self.bias = self.weights[0]
+            self.weights = self.weights[1:]
+
         return self
-    
+
     def predict_proba(self, X: np.ndarray) -> np.ndarray:
         """
         Predict probability estimates.
-        
+
         Args:
             X: Features
-            
+
         Returns:
             Probability of positive class (n_samples,)
         """
         X = np.asarray(X)
-        if self.fit_intercept:
-            z = X @ self.weights + self.bias
-        else:
-            z = X @ self.weights + self.bias
+        z = X @ self.weights + self.bias
         return self.sigmoid(z)
     
     def predict(self, X: np.ndarray, threshold: float = 0.5) -> np.ndarray:
@@ -519,8 +529,6 @@ class LogisticRegression(BaseLinearModel):
     def decision_function(self, X: np.ndarray) -> np.ndarray:
         """Compute decision function (log-odds)."""
         X = np.asarray(X)
-        if self.fit_intercept:
-            return X @ self.weights + self.bias
         return X @ self.weights + self.bias
 
 
@@ -598,16 +606,19 @@ class ElasticNet(BaseLinearModel):
                 
                 self.weights -= self.learning_rate * dw
                 self.bias -= self.learning_rate * db
-        
+
+        # Extract bias from joint weight vector so predict() can use X @ w + b
+        if self.fit_intercept:
+            self.bias = self.weights[0]
+            self.weights = self.weights[1:]
+
         return self
-    
+
     def predict(self, X: np.ndarray) -> np.ndarray:
         """Make predictions."""
         X = np.asarray(X)
-        if self.fit_intercept:
-            return X @ self.weights + self.bias
         return X @ self.weights + self.bias
-    
+
     def score(self, X: np.ndarray, y: np.ndarray) -> float:
         """Compute R² score."""
         y_pred = self.predict(X)

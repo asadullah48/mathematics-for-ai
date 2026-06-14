@@ -162,11 +162,11 @@ class TestOptimization:
     
     def test_gradient_ascent_step(self):
         """Test single gradient ascent step."""
-        f = lambda x: -x ** 2  # Maximizing negative quadratic
+        f = lambda x: -x ** 2  # Maximizing negative quadratic (peak at x=0)
         x = np.array([3.0])
         new_x = Calculus.gradient_ascent_step(f, x, learning_rate=0.1)
-        # Gradient is -2x = -6, ascent adds: 3 + 0.1 * 6 = 3.6
-        expected = 3.0 + 0.1 * 6.0
+        # f'(x) = -2x, at x=3 gradient = -6; ascent: x + lr*grad = 3 + 0.1*(-6) = 2.4
+        expected = 3.0 + 0.1 * (-6.0)
         assert np.isclose(new_x, expected)
     
     def test_newton_step(self):

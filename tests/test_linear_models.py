@@ -9,7 +9,7 @@ import os
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
-from ai_models.linear_models import LinearRegression, LogisticRegression, Ridge, Lasso
+from ai_models.linear_models import LinearRegression, LogisticRegression, Ridge, Lasso, ElasticNet
 
 
 class TestLinearRegression:
@@ -117,9 +117,10 @@ class TestRidge:
         X = np.random.randn(50, 10)
         y = X @ np.random.randn(10) + np.random.randn(50) * 0.1
         
-        # Fit with different regularization strengths
-        model_no_reg = Ridge(alpha=0, n_iterations=1000, learning_rate=0.1)
-        model_high_reg = Ridge(alpha=100, n_iterations=1000, learning_rate=0.1)
+        # Fit with different regularization strengths.
+        # lr=0.001: satisfies lr < 1/(2/n * λ_max(X^TX) + 2*alpha) for alpha up to 100.
+        model_no_reg = Ridge(alpha=0, n_iterations=5000, learning_rate=0.001)
+        model_high_reg = Ridge(alpha=100, n_iterations=5000, learning_rate=0.001)
         
         model_no_reg.fit(X, y)
         model_high_reg.fit(X, y)
@@ -160,7 +161,7 @@ class TestElasticNet:
         X = np.random.randn(100, 10)
         y = X @ np.random.randn(10) + np.random.randn(100) * 0.1
         
-        model = ElasticNet(alpha=1.0, l1_ratio=0.5, n_iterations=500, learning_rate=0.1)
+        model = ElasticNet(alpha=0.1, l1_ratio=0.5, n_iterations=1000, learning_rate=0.1)
         model.fit(X, y)
         
         y_pred = model.predict(X)
