@@ -9,7 +9,7 @@ Unsupervised learning algorithms implemented from scratch:
 """
 
 import numpy as np
-from typing import Optional, List, Tuple, Union
+from typing import Optional, List, Tuple, Union, Dict
 from abc import ABC, abstractmethod
 from scipy.spatial.distance import cdist
 

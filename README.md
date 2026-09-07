@@ -290,3 +290,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📧 Contact
 
 For questions and suggestions, please open an issue or contact the maintainers.
+
+## ✍️ Author
+
+Built by **Asadullah Shafique**.
+
+🔗 Portfolio - Agentic AI projects and real-world applications: [asadullahshafique-devunity.vercel.app](https://asadullahshafique-devunity.vercel.app)
+🐙 GitHub: [github.com/asadullah48](https://github.com/asadullah48)
