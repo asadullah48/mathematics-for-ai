@@ -16,6 +16,8 @@ similarity ranking) is unchanged either way.
 Run directly:
     python scripts/rag_embeddings.py
 """
+from __future__ import annotations  # list[str]/dict[...] annotations need this on Python 3.8
+
 import re
 import sys
 from pathlib import Path

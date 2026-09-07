@@ -10,6 +10,8 @@ run from the command line or import into other scripts/notebooks.
 Run directly:
     python scripts/optimization_routines.py
 """
+from __future__ import annotations  # list[float]/dict[...] annotations need this on Python 3.8
+
 import sys
 from pathlib import Path
 from typing import Callable
