@@ -94,6 +94,39 @@ AI-relevant problems:
 Run any script directly, e.g. `python scripts/rag_embeddings.py`. For the
 theory behind any of these, see [`resources/README.md`](resources/README.md).
 
+## 🤖 Agentic AI Alignment
+
+This library isn't an agent itself — it's the mathematical substrate
+autonomous agents run on. How the pieces map to the three properties that
+make a system "agentic" rather than just automated:
+
+- **Autonomy** — [`scripts/rag_embeddings.py`](scripts/rag_embeddings.py)
+  implements the cosine-similarity retrieval step that lets an agent search
+  its own memory/knowledge base without a human hand-picking context;
+  `src/ai_models/` gives an agent from-scratch primitives (regression,
+  clustering, neural networks) to make its own predictions instead of
+  calling out to a black-box API.
+- **Resilience** — `src/math_utils/probability.py` and `statistics.py`
+  give an agent the tools to reason under uncertainty (Bayesian updates,
+  MLE/MAP, hypothesis testing) instead of failing hard when evidence is
+  incomplete; [`scripts/optimization_routines.py`](scripts/optimization_routines.py)
+  compares gradient descent against Newton's method so an agent's learning
+  loop can pick a solver that actually converges on the problem at hand.
+- **Adaptivity** — every notebook and script is parameterized (learning
+  rate, tolerance, kernel choice), the same shape an agent needs to retune
+  itself online as its environment changes rather than run one fixed
+  offline training pass.
+
+### Next steps toward multi-agent / cloud-native use
+
+- Wrap `src/ai_models/` behind a tool-calling schema (MCP or plain
+  function-calling) so an LLM agent can invoke `fit()`/`predict()` as a
+  tool instead of reasoning about the math in-context.
+- Package `scripts/rag_embeddings.py` as the retrieval tool for a small
+  RAG agent — the embeddings math here is already the hard part.
+- Add a FastAPI + Docker serving layer around the trained models so this
+  repo can act as a shared "math microservice" for other agent projects.
+
 ## 🚀 Installation
 
 ### From PyPI (coming soon)
