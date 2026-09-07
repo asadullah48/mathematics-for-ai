@@ -1,6 +1,11 @@
 # Mathematics for AI
 
-A comprehensive educational repository and Python library for understanding and implementing the mathematical foundations of Artificial Intelligence and Machine Learning.
+[![Build](https://github.com/asadullah48/mathematics-for-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/asadullah48/mathematics-for-ai/actions/workflows/ci.yml)
+[![Resources](https://img.shields.io/badge/Resources-📚-blue)](resources/README.md)
+[![AI-ready](https://img.shields.io/badge/AI--ready-🚀-brightgreen)](#-ai-integration-notebooks--scripts)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+**Empowering AI through Mathematics.** A comprehensive educational repository and Python library for understanding and implementing the mathematical foundations of Artificial Intelligence and Machine Learning.
 
 ## 🎯 Overview
 
@@ -10,6 +15,24 @@ This project provides:
 - **Visualizations** to understand abstract mathematical concepts
 - **Jupyter notebooks** with hands-on examples and exercises
 - **Production-ready code** that can be used in real applications
+
+## 🗺️ Roadmap: Foundations → Applications → AI Integration
+
+This repo is organized to move you through three stages, each building on
+the last:
+
+1. **Foundations** - the math itself, implemented from scratch and
+   testable in isolation: `src/math_utils/` (linear algebra, calculus,
+   probability, statistics) plus the theory pointers in
+   [`resources/`](resources/README.md).
+2. **Applications** - the classic ML algorithms these foundations build:
+   `src/ai_models/` (linear/logistic regression, SVM, clustering, neural
+   networks) and the worked notebooks in `notebooks/`.
+3. **AI Integration** - the math wired into AI-shaped tasks you'll
+   actually hit building with LLMs/agents today: `scripts/` (retrieval via
+   cosine similarity - the mechanism behind RAG - and optimizer
+   comparisons). See [AI Integration: Notebooks & Scripts](#-ai-integration-notebooks--scripts)
+   below.
 
 ## 📚 Topics Covered
 
@@ -55,6 +78,22 @@ This project provides:
 - Neural Networks (Feedforward, CNN, RNN)
 - Attention mechanisms and Transformers
 
+## 🚀 AI Integration: Notebooks & Scripts
+
+Worked examples that take the math in `src/math_utils/` and point it at
+AI-relevant problems:
+
+| File | Demonstrates |
+|---|---|
+| [`notebooks/linear-algebra/01_vectors_matrices.ipynb`](notebooks/linear-algebra/01_vectors_matrices.ipynb) | Vector/matrix operations from first principles |
+| [`notebooks/linear-algebra/02_eigendecomposition.ipynb`](notebooks/linear-algebra/02_eigendecomposition.ipynb) | Eigen decomposition, geometric intuition, PCA via covariance eigenvectors |
+| [`notebooks/calculus/01_gradient_descent.ipynb`](notebooks/calculus/01_gradient_descent.ipynb) | Gradient descent vs. Newton's method, visualized convergence paths |
+| [`scripts/rag_embeddings.py`](scripts/rag_embeddings.py) | Cosine similarity as retrieval - the math behind RAG's "search" step |
+| [`scripts/optimization_routines.py`](scripts/optimization_routines.py) | Gradient descent vs. Newton's method on the Rosenbrock benchmark, runnable from the CLI |
+
+Run any script directly, e.g. `python scripts/rag_embeddings.py`. For the
+theory behind any of these, see [`resources/README.md`](resources/README.md).
+
 ## 🚀 Installation
 
 ### From PyPI (coming soon)
@@ -64,7 +103,7 @@ pip install mathematics-for-ai
 
 ### From Source
 ```bash
-git clone https://github.com/yourusername/mathematics-for-ai.git
+git clone https://github.com/asadullah48/mathematics-for-ai.git
 cd mathematics-for-ai
 pip install -e .
 ```
@@ -109,7 +148,7 @@ predictions = model.predict(X_test)
 Explore the `notebooks/` directory for interactive tutorials:
 
 ```bash
-jupyter notebook notebooks/basics/introduction.ipynb
+jupyter notebook notebooks/basics/01_introduction.ipynb
 ```
 
 ## 📁 Project Structure
@@ -137,6 +176,10 @@ mathematics-for-ai/
 │   ├── calculus/
 │   ├── probability/
 │   └── applications/
+├── scripts/                 # Runnable practical-application demos
+│   ├── rag_embeddings.py    # Cosine similarity as retrieval (RAG)
+│   └── optimization_routines.py
+├── resources/                # Curated links to books/papers/courses
 ├── tests/                   # Test suite
 ├── docs/                    # Documentation
 │   ├── theory/              # Mathematical theory
@@ -221,7 +264,7 @@ We welcome contributions! Please see our [Contributing Guide](docs/CONTRIBUTING.
 ### Development Setup
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/mathematics-for-ai.git
+git clone https://github.com/asadullah48/mathematics-for-ai.git
 
 # Install development dependencies
 pip install -e ".[dev]"

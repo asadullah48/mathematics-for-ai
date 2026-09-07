@@ -55,9 +55,9 @@ docs = [
 math-ai = "cli:main"
 
 [project.urls]
-Homepage = "https://github.com/yourusername/mathematics-for-ai"
+Homepage = "https://github.com/asadullah48/mathematics-for-ai"
 Documentation = "https://mathematics-for-ai.readthedocs.io"
-Repository = "https://github.com/yourusername/mathematics-for-ai"
+Repository = "https://github.com/asadullah48/mathematics-for-ai"
 
 [tool.setuptools.packages.find]
 where = ["src"]
